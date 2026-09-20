@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gupax_mobile"
+version = "1.0.0"
+authors = [
+  { name="Gupax Community" },
+]
+description = "Standalone Monero & P2Pool mining manager with native terminal UI for Android and Desktop"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Environment :: Console",
+]
+
+[project.scripts]
+gupax = "gupax_mobile.cli:main"
+gupax-mobile = "gupax_mobile.cli:main"

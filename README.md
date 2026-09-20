@@ -1,11 +1,40 @@
-<div align="center">
+# Gupax Mobile (Python Edition)
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+A standalone Monero and decentralized P2Pool mining manager with a native Terminal User Interface (TUI).
 
-  <h1>Built with AI Studio</h2>
+## Installation via pip
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+### Option A: Install from wheel (.whl)
+```bash
+pip install gupax_mobile-1.0.0-py3-none-any.whl
+```
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+### Option B: Install from directory or source archive (.tar.gz / .zip)
+```bash
+pip install gupax_mobile-1.0.0.tar.gz
+# or
+pip install .
+```
 
-</div>
+## Running the Application
+Once installed via pip, run either:
+```bash
+gupax
+```
+or
+```bash
+gupax-mobile
+```
+or directly via python:
+```bash
+python3 -m gupax_mobile
+```
+
+## Controls
+- `[1] - [6]`: Switch tabs (Dashboard, Miner, P2Pool, ARM Tuning, Nodes, Logs)
+- `[M]` or `[Space]`: Start / Stop mining simulation
+- `[C]`: Switch between P2Pool Mini and Main
+- `[+]` / `[-]`: Change CPU thread count
+- `[S]`: Cycle mobile phone SoC profiles (Snapdragon, Tensor, Dimensity)
+- `[E]`: Export `config.json` and `start_xmrig.sh` for Termux
+- `[Q]`: Quit

@@ -1,0 +1,6 @@
+{
+  "name": "Gupax for Android",
+  "description": "Mobile P2Pool and XMRig mining manager, remote monitor, and ARM configuration suite for Android devices.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
