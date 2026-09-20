@@ -1,3 +1,9 @@
-"""Standalone Monero & P2Pool mining manager with native terminal UI for Android and Desktop"""
-__version__ = "1.0.0"
-from .cli import main, GupaxApp
+"""Gupax Mobile - Standalone Monero & P2Pool Mining Application"""
+__version__ = "1.1.0"
+
+from .core import GupaxApp
+from .main import main
+from .gui import launch_gui
+from .cli import launch_cli
+
+__all__ = ["GupaxApp", "main", "launch_gui", "launch_cli"]

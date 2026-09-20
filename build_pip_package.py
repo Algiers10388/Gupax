@@ -4,35 +4,21 @@ import zipfile
 import tarfile
 import hashlib
 import base64
+import shutil
 
 # Package metadata
 NAME = "gupax_mobile"
-VERSION = "1.0.0"
-SUMMARY = "Standalone Monero & P2Pool mining manager with native terminal UI for Android and Desktop"
+VERSION = "1.1.0"
+SUMMARY = "Standalone Monero & P2Pool mining manager with standard Graphical UI (Tkinter) and TUI for Desktop and Mobile"
 AUTHOR = "Gupax Community"
 LICENSE = "MIT"
 
 # Ensure gupax_mobile directory exists
 os.makedirs("gupax_mobile", exist_ok=True)
 
-# Copy the core script logic into gupax_mobile/cli.py and gupax_mobile/__init__.py
-with open("gupax_mobile.py", "r") as f:
-    code = f.read()
-
-# Write gupax_mobile/cli.py
-with open("gupax_mobile/cli.py", "w") as f:
-    f.write(code)
-
-# Write gupax_mobile/__init__.py
-with open("gupax_mobile/__init__.py", "w") as f:
-    f.write(f'"""{SUMMARY}"""\n__version__ = "{VERSION}"\nfrom .cli import main, GupaxApp\n')
-
-# Write gupax_mobile/__main__.py
-with open("gupax_mobile/__main__.py", "w") as f:
-    f.write('from .cli import main\nif __name__ == "__main__":\n    main()\n')
-
 # Write setup.py
-setup_py = f"""from setuptools import setup, find_packages
+setup_py = f"""import os
+from setuptools import setup, find_packages
 
 setup(
     name="{NAME}",
@@ -47,13 +33,17 @@ setup(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
+        "Environment :: X11 Applications",
         "Environment :: Console",
     ],
     python_requires=">=3.8",
     entry_points={{
         "console_scripts": [
-            "gupax={NAME}.cli:main",
-            "gupax-mobile={NAME}.cli:main",
+            "gupax={NAME}.main:main",
+            "gupax-mobile={NAME}.main:main",
+        ],
+        "gui_scripts": [
+            "gupax-gui={NAME}.main:main",
         ],
     }},
 )
@@ -79,37 +69,36 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+    "Environment :: X11 Applications",
     "Environment :: Console",
 ]
 
 [project.scripts]
-gupax = "{NAME}.cli:main"
-gupax-mobile = "{NAME}.cli:main"
+gupax = "{NAME}.main:main"
+gupax-mobile = "{NAME}.main:main"
+gupax-gui = "{NAME}.main:main"
 """
 with open("pyproject.toml", "w") as f:
     f.write(pyproject_toml)
 
 # Write README.md
-readme_md = f"""# Gupax Mobile (Python Edition)
+readme_md = f"""# Gupax Mobile (Standard Python Application)
 
-A standalone Monero and decentralized P2Pool mining manager with a native Terminal User Interface (TUI).
+A standalone Monero and decentralized P2Pool mining manager with a standard Graphical User Interface (Tkinter GUI) and an interactive Terminal User Interface (TUI).
 
 ## Installation via pip
 
-### Option A: Install from wheel (.whl)
+Install the package directly using `pip`:
 ```bash
-pip install gupax_mobile-1.0.0-py3-none-any.whl
+pip install gupax_mobile-1.1.0-py3-none-any.whl
 ```
-
-### Option B: Install from directory or source archive (.tar.gz / .zip)
+*(Or install the source archive)*:
 ```bash
-pip install gupax_mobile-1.0.0.tar.gz
-# or
-pip install .
+pip install gupax_mobile-1.1.0.tar.gz
 ```
 
 ## Running the Application
-Once installed via pip, run either:
+Once installed via pip, launch the app from any terminal or command prompt:
 ```bash
 gupax
 ```
@@ -117,19 +106,22 @@ or
 ```bash
 gupax-mobile
 ```
-or directly via python:
-```bash
-python3 -m gupax_mobile
-```
 
-## Controls
-- `[1] - [6]`: Switch tabs (Dashboard, Miner, P2Pool, ARM Tuning, Nodes, Logs)
-- `[M]` or `[Space]`: Start / Stop mining simulation
-- `[C]`: Switch between P2Pool Mini and Main
-- `[+]` / `[-]`: Change CPU thread count
-- `[S]`: Cycle mobile phone SoC profiles (Snapdragon, Tensor, Dimensity)
-- `[E]`: Export `config.json` and `start_xmrig.sh` for Termux
-- `[Q]`: Quit
+### Display Modes
+- **Standard Desktop GUI**: Launches automatically when running on Windows, macOS, or Linux with an active graphical desktop.
+- **Interactive Terminal UI (TUI)**: Automatically activates in headless environments, SSH sessions, or Android Termux without X11. You can also explicitly trigger TUI mode with:
+  ```bash
+  gupax --cli
+  ```
+
+## Features
+- **Standard Graphical Window**: Native desktop application window with tabs, dark theme, and high-DPI scaling.
+- **Real-time Telemetry**: Live hashrate chart canvas (10s, 60s, 15m, Peak H/s), shares accepted/rejected.
+- **Miner Controls**: One-click Start/Stop, CPU thread slider (1–8 cores), Monero payout address configuration.
+- **P2Pool Decentralized Rewards**: Real-time sidechain height, difficulty, and automated profit calculator.
+- **ARM SoC Optimizer**: Big.LITTLE core affinity pinning for Snapdragon 8 Gen 3/2, Google Tensor, Dimensity to avoid thermal throttling.
+- **Node Directory & TCP Ping**: Built-in latency testing to public stratum nodes and remote Monero daemons.
+- **1-Click Termux Export**: Generates `config.json` and `start_xmrig.sh` ready for Android devices.
 """
 with open("README.md", "w") as f:
     f.write(readme_md)
@@ -157,8 +149,11 @@ Tag: py3-none-any
 """
 
 entry_points_content = f"""[console_scripts]
-gupax = {NAME}.cli:main
-gupax-mobile = {NAME}.cli:main
+gupax = {NAME}.main:main
+gupax-mobile = {NAME}.main:main
+
+[gui_scripts]
+gupax-gui = {NAME}.main:main
 """
 
 def hash_file(data):
@@ -172,6 +167,8 @@ with zipfile.ZipFile(wheel_filename, "w", compression=zipfile.ZIP_DEFLATED) as w
     # Add python files
     for root, _, files in os.walk(NAME):
         for file in files:
+            if file.endswith(".pyc") or "__pycache__" in root:
+                continue
             path = os.path.join(root, file)
             with open(path, "rb") as f:
                 data = f.read()
@@ -216,7 +213,12 @@ print(f"Created sdist: {sdist_filename}")
 
 # Copy wheel and sdist to public directory for direct download in browser
 os.makedirs("public", exist_ok=True)
-import shutil
 shutil.copy(wheel_filename, f"public/{wheel_filename}")
 shutil.copy(sdist_filename, f"public/{sdist_filename}")
+shutil.copy("gupax_mobile.py", "public/gupax_mobile.py")
+
+# Also keep 1.0.0 symlinks or copies if needed for backwards compatibility
+shutil.copy(wheel_filename, "public/gupax_mobile-1.0.0-py3-none-any.whl")
+shutil.copy(sdist_filename, "public/gupax_mobile-1.0.0.tar.gz")
+
 print("Copied packages to public directory successfully.")

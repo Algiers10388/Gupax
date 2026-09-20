@@ -111,9 +111,9 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Standalone Native Python Program / PIP Download */}
           <a
-            href="/gupax_mobile-1.0.0-py3-none-any.whl"
-            download="gupax_mobile-1.0.0-py3-none-any.whl"
-            title="Download PIP Wheel package (pip install gupax_mobile-1.0.0-py3-none-any.whl)"
+            href="/gupax_mobile-1.1.0-py3-none-any.whl"
+            download="gupax_mobile-1.1.0-py3-none-any.whl"
+            title="Download Standard Python Application (pip install gupax_mobile-1.1.0-py3-none-any.whl)"
             className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition shadow-sm"
           >
             <Download className="w-3.5 h-3.5" />

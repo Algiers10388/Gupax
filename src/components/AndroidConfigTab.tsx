@@ -311,7 +311,7 @@ fi
         </pre>
       </div>
 
-      {/* Pip Install & Standalone Python Application (Google Drive / Terminal Ready) */}
+      {/* Pip Install & Standalone Python Application (Desktop GUI & Mobile TUI) */}
       <div className="rounded-xl bg-slate-900 border border-amber-500/30 p-5 space-y-4 text-xs shadow-lg">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
           <div className="flex items-center gap-3">
@@ -320,18 +320,18 @@ fi
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-white uppercase text-sm tracking-wide">Install with PIP (Python Package)</span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono text-[10px] font-bold border border-emerald-500/30">v1.0.0</span>
+                <span className="font-bold text-white uppercase text-sm tracking-wide">Standard Python Application (GUI & TUI)</span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono text-[10px] font-bold border border-emerald-500/30">v1.1.0</span>
               </div>
               <p className="text-[11px] text-slate-400 font-sans mt-0.5">
-                Install as a system terminal command (<code className="text-amber-300 font-mono">gupax</code>) using Python's standard <code className="text-amber-300 font-mono">pip install</code>. No web browser needed.
+                Standard desktop window application (<span className="text-amber-300 font-medium">Tkinter GUI</span>) & interactive terminal app (<span className="text-emerald-300 font-medium">TUI</span>) with automatic display detection. Install with <code className="text-amber-300 font-mono">pip install</code>.
               </p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2 shrink-0">
             <a
-              href="/gupax_mobile-1.0.0-py3-none-any.whl"
-              download="gupax_mobile-1.0.0-py3-none-any.whl"
+              href="/gupax_mobile-1.1.0-py3-none-any.whl"
+              download="gupax_mobile-1.1.0-py3-none-any.whl"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition cursor-pointer shadow-sm"
               title="Download standard Python Wheel for pip install"
             >
@@ -339,8 +339,8 @@ fi
               <span>Download Wheel (.whl)</span>
             </a>
             <a
-              href="/gupax_mobile-1.0.0.tar.gz"
-              download="gupax_mobile-1.0.0.tar.gz"
+              href="/gupax_mobile-1.1.0.tar.gz"
+              download="gupax_mobile-1.1.0.tar.gz"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition cursor-pointer"
               title="Download source tarball for pip install"
             >
@@ -363,11 +363,11 @@ fi
         <div className="space-y-2">
           <div className="flex items-center justify-between text-[11px]">
             <span className="font-bold text-amber-400 flex items-center gap-1.5">
-              <Terminal className="w-3.5 h-3.5" /> Terminal PIP Installation:
+              <Terminal className="w-3.5 h-3.5" /> Terminal PIP Installation & Run:
             </span>
             <button
               onClick={() => {
-                navigator.clipboard.writeText('pip install gupax_mobile-1.0.0-py3-none-any.whl\n# Or run:\ngupax');
+                navigator.clipboard.writeText('pip install gupax_mobile-1.1.0-py3-none-any.whl\n# Launch desktop GUI window (or TUI if headless):\ngupax\n# Force TUI mode:\ngupax --cli');
                 setCopiedPip(true);
                 setTimeout(() => setCopiedPip(false), 2000);
               }}
@@ -378,33 +378,29 @@ fi
             </button>
           </div>
           <pre className="p-3 bg-slate-950 rounded-lg border border-slate-800 overflow-x-auto text-[11px] text-amber-200 font-mono leading-relaxed">
-{`# 1. Install the downloaded package with pip
-pip install gupax_mobile-1.0.0-py3-none-any.whl
+{`# 1. Install with pip
+pip install gupax_mobile-1.1.0-py3-none-any.whl
 
-# 2. Launch Gupax from anywhere in your terminal!
+# 2. Launch the standard desktop GUI application!
 gupax
 
-# (Or run as a module without installing)
-python3 -m gupax_mobile`}
+# Optional flags:
+gupax --gui    # Forces desktop GUI window
+gupax --cli    # Forces interactive terminal console (Termux/SSH/Headless)`}
           </pre>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
           <div className="p-3 bg-slate-950/70 rounded-lg border border-slate-800 text-[11px] text-slate-300 space-y-1.5">
-            <div className="font-bold text-amber-400">Android (Termux) Setup:</div>
+            <div className="font-bold text-amber-400">Desktop Interface (GUI):</div>
             <p className="text-slate-400 font-sans">
-              1. Run: <code className="text-amber-300 font-mono">pkg install python</code><br />
-              2. Download or upload the <code className="text-amber-300 font-mono">.whl</code> to your device.<br />
-              3. Run: <code className="text-amber-300 font-mono">pip install gupax_mobile-1.0.0-py3-none-any.whl</code><br />
-              4. Type <code className="text-emerald-300 font-mono">gupax</code> to launch the interactive terminal UI.
+              Standard native desktop window with high-DPI tabs, real-time hashrate graphs, interactive Big.LITTLE CPU affinity mapping, and instant one-click mining controls. Works out-of-the-box with Python's built-in <code className="text-amber-300 font-mono">tkinter</code>.
             </p>
           </div>
           <div className="p-3 bg-slate-950/70 rounded-lg border border-slate-800 text-[11px] text-slate-300 space-y-1.5">
-            <div className="font-bold text-amber-400">Google Drive / Colab / PC:</div>
+            <div className="font-bold text-emerald-400">Terminal & Termux (TUI):</div>
             <p className="text-slate-400 font-sans">
-              1. Upload the <code className="text-amber-300 font-mono">.whl</code> or <code className="text-amber-300 font-mono">.py</code> to your Google Drive folder.<br />
-              2. In terminal/Colab: <code className="text-amber-300 font-mono">!pip install /path/to/gupax_mobile-1.0.0-py3-none-any.whl</code><br />
-              3. Terminal controls: Press <kbd className="px-1 bg-slate-800 rounded">1-6</kbd> for tabs, <kbd className="px-1 bg-slate-800 rounded">Space</kbd> to mine, <kbd className="px-1 bg-slate-800 rounded">Q</kbd> to quit.
+              Full ANSI-colored interactive terminal dashboard for headless servers, SSH, Termux, and Google Drive / Colab. Features real-time status bars, keyboard hotkeys (<kbd className="px-1 bg-slate-800 rounded">1-6</kbd>, <kbd className="px-1 bg-slate-800 rounded">Space</kbd>, <kbd className="px-1 bg-slate-800 rounded">Q</kbd>), and TCP node latency pinging.
             </p>
           </div>
         </div>
