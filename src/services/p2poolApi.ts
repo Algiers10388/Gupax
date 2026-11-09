@@ -2,13 +2,18 @@ import { P2PoolChain, P2PoolLiveStats, MinerShareInfo } from '../types';
 
 export const DEMO_WALLETS = [
   {
+    name: 'Primary Wallet (Default)',
+    address: '42MjdgtAAHAKKk6yu8iMYjWqf6zFuUbWEiwQCsEkg63LZTfxuWWWYG6HHaLnnLpcV9UkaNAJKTLoxRWHKH5TrMN5NY7x3gL',
+    note: 'Configured default Monero payout address',
+  },
+  {
     name: 'Monero General Dev Fund',
     address: '888tNkZrPN6JsEgekjMnABU4TBzc2Dt29EPAvkFxbANsAnJYPbb3iQ1YBRk1UXcdRsiKc9dhwMVgN5S9cQUiyoogDavup3H',
     note: 'Official Monero development donation address',
   },
   {
     name: 'Gupax Creator (hinto-janai)',
-    address: '888tNkZrPN6JsEgekjMnABU4TBzc2Dt29EPAvkFxbANsAnJYPbb3iQ1YBRk1UXcdRsiKc9dhwMVgN5S9cQUiyoogDavup3H',
+    address: '442uJL8FpqbfNmVsTss9sy82Z4qW4G6bCg2Y3Cq3tC2F13Cxg58D1Z26mN7w5RkKz9e27Y15A9M8eP6E4J9A9M8',
     note: 'Gupax developer donation',
   },
 ];

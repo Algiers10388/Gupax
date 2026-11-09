@@ -15,6 +15,7 @@ import { P2PoolTab } from './components/P2PoolTab';
 import { AndroidConfigTab } from './components/AndroidConfigTab';
 import { NodesTab } from './components/NodesTab';
 import { ConsoleTab } from './components/ConsoleTab';
+import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { fetchP2PoolStats, fetchMinerStats, DEMO_WALLETS } from './services/p2poolApi';
 import { useHaptics } from './hooks/useHaptics';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
@@ -199,8 +200,33 @@ export default function App() {
     };
   }, [status.isMining, status.activeThreads, status.targetPool, p2poolStats.difficulty, addLog, shareSuccessHaptic]);
 
+  // Modal & Keyboard Navigation State
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+  const [lastKeyPressed, setLastKeyPressed] = useState<string | null>(null);
+  const [toastKeyFeedback, setToastKeyFeedback] = useState<{ key: string; action: string } | null>(null);
+  const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const TABS: GupaxTab[] = ['dashboard', 'miner', 'p2pool', 'config', 'nodes', 'console'];
+  const TAB_NAMES: Record<GupaxTab, string> = {
+    dashboard: 'Status Dashboard [1]',
+    miner: 'XMRig Miner [2]',
+    p2pool: 'P2Pool Sidechain [3]',
+    config: 'ARM Config [4]',
+    nodes: 'Stratum Nodes [5]',
+    console: 'Console Logs [6]',
+  };
+
+  const showKeyFeedback = useCallback((keyName: string, actionName: string) => {
+    setLastKeyPressed(keyName);
+    setToastKeyFeedback({ key: keyName, action: actionName });
+    if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
+    feedbackTimeoutRef.current = setTimeout(() => {
+      setToastKeyFeedback(null);
+    }, 2400);
+  }, []);
+
   // Toggle Mining
-  const handleToggleMining = () => {
+  const handleToggleMining = useCallback(() => {
     setStatus(prev => {
       const nextMining = !prev.isMining;
       if (!nextMining) {
@@ -215,15 +241,145 @@ export default function App() {
         isMining: true,
       };
     });
-  };
+  }, []);
 
   // Toggle Chain (Mini <-> Main)
-  const handleToggleChain = () => {
-    const nextChain = chain === 'mini' ? 'main' : 'mini';
-    setChain(nextChain);
-    setStatus(prev => ({ ...prev, chain: nextChain }));
-    addLog('P2POOL', 'info', `Switched active sidechain to P2Pool ${nextChain.toUpperCase()}`);
-  };
+  const handleToggleChain = useCallback(() => {
+    setChain(prev => {
+      const nextChain = prev === 'mini' ? 'main' : 'mini';
+      setStatus(s => ({ ...s, chain: nextChain }));
+      addLog('P2POOL', 'info', `Switched active sidechain to P2Pool ${nextChain.toUpperCase()}`);
+      return nextChain;
+    });
+  }, [addLog]);
+
+  // Global Keyboard Navigation Listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isInput = target && (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.isContentEditable
+      );
+
+      // Escape handling
+      if (e.key === 'Escape') {
+        if (isShortcutsOpen) {
+          setIsShortcutsOpen(false);
+          showKeyFeedback('Esc', 'Closed Shortcuts Dialog');
+          return;
+        }
+        if (isInput) {
+          target.blur();
+          showKeyFeedback('Esc', 'Unfocused input field');
+          return;
+        }
+      }
+
+      // If user is currently typing inside an input/textarea/select, do not intercept keys
+      if (isInput) return;
+
+      // Tab jumping: 1 - 6
+      if (['1', '2', '3', '4', '5', '6'].includes(e.key)) {
+        e.preventDefault();
+        const tabIdx = parseInt(e.key, 10) - 1;
+        const selected = TABS[tabIdx];
+        if (selected) {
+          setActiveTab(selected);
+          showKeyFeedback(e.key, `Switched to ${TAB_NAMES[selected]}`);
+        }
+        return;
+      }
+
+      // Tab navigation: ArrowLeft / ArrowRight
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        setActiveTab(prev => {
+          const idx = TABS.indexOf(prev);
+          const next = TABS[(idx + 1) % TABS.length];
+          showKeyFeedback('→', `Switched to ${TAB_NAMES[next]}`);
+          return next;
+        });
+        return;
+      }
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        setActiveTab(prev => {
+          const idx = TABS.indexOf(prev);
+          const prevTab = TABS[(idx - 1 + TABS.length) % TABS.length];
+          showKeyFeedback('←', `Switched to ${TAB_NAMES[prevTab]}`);
+          return prevTab;
+        });
+        return;
+      }
+
+      // Mining toggle: Space or M
+      if (e.key === ' ' || e.key === 'm' || e.key === 'M') {
+        e.preventDefault();
+        handleToggleMining();
+        const willBeMining = !status.isMining;
+        showKeyFeedback(e.key === ' ' ? 'Space' : e.key.toUpperCase(), willBeMining ? 'Mining Started' : 'Mining Stopped');
+        return;
+      }
+
+      // Chain toggle: C
+      if (e.key === 'c' || e.key === 'C') {
+        e.preventDefault();
+        handleToggleChain();
+        const nextChain = chain === 'mini' ? 'MAIN' : 'MINI';
+        showKeyFeedback('C', `Sidechain switched to ${nextChain}`);
+        return;
+      }
+
+      // Thread adjustments: '+' or '='
+      if (e.key === '+' || e.key === '=') {
+        e.preventDefault();
+        setStatus(prev => {
+          const updated = Math.min(8, prev.activeThreads + 1);
+          showKeyFeedback('+', `CPU threads set to ${updated}`);
+          addLog('ANDROID', 'info', `Keyboard shortcut: Thread count increased to ${updated}`);
+          return { ...prev, activeThreads: updated };
+        });
+        return;
+      }
+
+      // Thread adjustments: '-' or '_'
+      if (e.key === '-' || e.key === '_') {
+        e.preventDefault();
+        setStatus(prev => {
+          const updated = Math.max(1, prev.activeThreads - 1);
+          showKeyFeedback('-', `CPU threads set to ${updated}`);
+          addLog('ANDROID', 'info', `Keyboard shortcut: Thread count decreased to ${updated}`);
+          return { ...prev, activeThreads: updated };
+        });
+        return;
+      }
+
+      // Help modal: '?' or 'h' / 'H'
+      if (e.key === '?' || e.key === 'h' || e.key === 'H') {
+        e.preventDefault();
+        setIsShortcutsOpen(prev => !prev);
+        showKeyFeedback(e.key, 'Toggled Keyboard Shortcuts guide');
+        return;
+      }
+
+      // Record any other key for live keystroke testing feedback
+      setLastKeyPressed(e.key);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [
+    status.isMining,
+    chain,
+    isShortcutsOpen,
+    handleToggleMining,
+    handleToggleChain,
+    showKeyFeedback,
+    addLog
+  ]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-orange-500/30">
@@ -242,6 +398,7 @@ export default function App() {
         isMining={status.isMining}
         isP2PoolConnected={status.isP2PoolConnected}
         isNodeConnected={status.isNodeConnected}
+        onOpenShortcuts={() => setIsShortcutsOpen(true)}
       />
 
       {/* Navigation (Desktop Horizontal Tabs + Mobile Bottom Bar) */}
@@ -253,7 +410,7 @@ export default function App() {
       />
 
       {/* Main View Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 pb-20 md:pb-12">
         {activeTab === 'dashboard' && (
           <DashboardTab
             status={status}
@@ -327,6 +484,50 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* Desktop Standard Status Bar with Live Keyboard Hints */}
+      <footer className="hidden md:flex items-center justify-between px-6 py-2 bg-slate-950 border-t border-slate-800/80 text-[11px] font-mono text-slate-400 select-none sticky bottom-0 z-30">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1.5 text-emerald-400 font-semibold">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            Hardware Keyboard Active
+          </span>
+          <span className="text-slate-700">|</span>
+          <span>[1-6] Tabs</span>
+          <span>[Space / M] Mine</span>
+          <span>[C] Chain</span>
+          <span>[+/-] Threads</span>
+          <span>[←/→] Navigate</span>
+        </div>
+        <button
+          id="btn-footer-shortcuts"
+          onClick={() => setIsShortcutsOpen(true)}
+          className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-orange-400 border border-slate-700/60 transition cursor-pointer"
+        >
+          <span>Press [?] Shortcuts Guide</span>
+        </button>
+      </footer>
+
+      {/* Real-time Keypress Feedback Indicator Toast */}
+      {toastKeyFeedback && (
+        <div 
+          id="keyboard-feedback-toast"
+          className="fixed bottom-16 md:bottom-12 right-4 z-50 flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-slate-900/95 border border-orange-500/50 shadow-2xl backdrop-blur-md text-xs font-mono text-slate-100 animate-slide-up"
+        >
+          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          <kbd className="px-2 py-0.5 rounded bg-orange-600/20 border border-orange-500/40 text-orange-400 font-bold">
+            {toastKeyFeedback.key}
+          </kbd>
+          <span className="text-slate-300 font-medium">{toastKeyFeedback.action}</span>
+        </div>
+      )}
+
+      {/* Keyboard Shortcuts Modal */}
+      <KeyboardShortcutsModal
+        isOpen={isShortcutsOpen}
+        onClose={() => setIsShortcutsOpen(false)}
+        lastKeyPressed={lastKeyPressed}
+      />
     </div>
   );
 }

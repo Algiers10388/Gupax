@@ -33,6 +33,10 @@ VERSION = "1.1.0"
 # ----------------------------------------------------------------------
 DEMO_WALLETS = [
     {
+        "name": "Primary Wallet (Default)",
+        "address": "42MjdgtAAHAKKk6yu8iMYjWqf6zFuUbWEiwQCsEkg63LZTfxuWWWYG6HHaLnnLpcV9UkaNAJKTLoxRWHKH5TrMN5NY7x3gL",
+    },
+    {
         "name": "Monero General Dev Fund",
         "address": "888tNkZrPN6JsEgekjMnABU4TBzc2Dt29EPAvkFxbANsAnJYPbb3iQ1YBRk1UXcdRsiKc9dhwMVgN5S9cQUiyoogDavup3H",
     },
@@ -709,6 +713,48 @@ def start_gui_app():
     s_bar.pack(fill=tk.X, side=tk.BOTTOM)
     lbl_stat = tk.Label(s_bar, text="● System Ready", font=("Helvetica", 9), fg=THEME["green"], bg=THEME["header_bg"])
     lbl_stat.pack(side=tk.LEFT)
+
+    lbl_hints = tk.Label(s_bar, text="Shortcuts: [1-6] Tabs  [Space] Mine  [C] Chain  [↑/↓] Threads  [P] Ping  [Esc] Unfocus/Quit", font=("Helvetica", 8), fg="#64748b", bg=THEME["header_bg"])
+    lbl_hints.pack(side=tk.LEFT, padx=16)
+
+    # Keyboard Event Binding
+    def handle_key(event):
+        if isinstance(event.widget, (tk.Entry, ttk.Entry, tk.Text, ttk.Combobox)):
+            if event.keysym == "Escape":
+                root.focus_set()
+            return
+        c = event.char
+        k = event.keysym
+        if c in ("1", "2", "3", "4", "5", "6"):
+            idx = int(c) - 1
+            if 0 <= idx < len(nb.tabs()):
+                nb.select(idx)
+        elif c in ("m", "M") or k in ("space", "Return"):
+            do_toggle_mining()
+        elif c in ("c", "C"):
+            do_toggle_chain()
+        elif c in ("+", "=") or k == "Up":
+            val = min(8, app.active_threads + 1)
+            th_slider.set(val)
+            on_th_slide(val)
+        elif c in ("-", "_") or k == "Down":
+            val = max(1, app.active_threads - 1)
+            th_slider.set(val)
+            on_th_slide(val)
+        elif k == "Left":
+            cur = nb.index("current")
+            nb.select((cur - 1) % len(nb.tabs()))
+        elif k in ("Right", "Tab"):
+            cur = nb.index("current")
+            nb.select((cur + 1) % len(nb.tabs()))
+        elif c in ("p", "P") or k == "F5":
+            app.ping_all_nodes(on_finish=refresh_nodes)
+        elif c in ("q", "Q") or k == "Escape":
+            root.destroy()
+
+    root.bind("<Key>", handle_key)
+    root.bind("<Control-q>", lambda e: root.destroy())
+    root.bind("<Control-m>", lambda e: do_toggle_mining())
 
     # Start background threads
     threading.Thread(target=mining_thread_worker, args=(app,), daemon=True).start()

@@ -177,20 +177,44 @@ def render_tui(app: GupaxApp):
             print(f" {C.DIM}{entry['time']}{C.RESET} [{entry['source']:<6}] {entry['msg']}")
 
     print(f"\n{C.DIM}{'═' * W}{C.RESET}")
-    print(f" {C.BOLD}[1-6]{C.RESET} Tabs │ {C.BOLD}[M/Space]{C.RESET} Mine │ {C.BOLD}[C]{C.RESET} Chain │ {C.BOLD}[+/-]{C.RESET} Threads │ {C.BOLD}[E]{C.RESET} Export │ {C.BOLD}[Q]{C.RESET} Quit")
+    print(f" {C.BOLD}[1-6/←→]{C.RESET} Tabs │ {C.BOLD}[M/Space]{C.RESET} Mine │ {C.BOLD}[C]{C.RESET} Chain │ {C.BOLD}[+/-/↑↓]{C.RESET} Threads │ {C.BOLD}[P]{C.RESET} Ping │ {C.BOLD}[E]{C.RESET} Export │ {C.BOLD}[Q/Esc]{C.RESET} Quit")
 
 def get_key_unix():
     import select
     import tty
     import termios
+    if not sys.stdin.isatty():
+        time.sleep(0.2)
+        return None
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
     try:
-        tty.setraw(fd)
-        rlist, _, _ = select.select([sys.stdin], [], [], 0.3)
-        if rlist:
-            return sys.stdin.read(1)
-        return None
+        tty.setcbreak(fd)
+        rlist, _, _ = select.select([sys.stdin], [], [], 0.25)
+        if not rlist:
+            return None
+        ch = sys.stdin.read(1)
+        if ch in ('\x03', '\x04'):
+            return "QUIT"
+        if ch == '\x1b':
+            # Check for escape sequences (arrow keys, function keys)
+            r2, _, _ = select.select([sys.stdin], [], [], 0.05)
+            if r2:
+                seq = sys.stdin.read(2)
+                if seq == '[A':
+                    return "UP"
+                elif seq == '[B':
+                    return "DOWN"
+                elif seq == '[C':
+                    return "RIGHT"
+                elif seq == '[D':
+                    return "LEFT"
+                elif seq in ('[H', '[1'):
+                    return "HOME"
+                elif seq in ('[F', '[4'):
+                    return "END"
+            return "ESC"
+        return ch
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
@@ -199,16 +223,30 @@ def get_key():
         import msvcrt
         if msvcrt.kbhit():
             try:
-                return msvcrt.getch().decode("utf-8", errors="ignore")
+                ch = msvcrt.getch()
+                if ch in (b'\x00', b'\xe0'):
+                    code = msvcrt.getch()
+                    if code == b'H':
+                        return "UP"
+                    elif code == b'P':
+                        return "DOWN"
+                    elif code == b'M':
+                        return "RIGHT"
+                    elif code == b'K':
+                        return "LEFT"
+                    return None
+                elif ch in (b'\x03', b'\x1b'):
+                    return "QUIT"
+                return ch.decode("utf-8", errors="ignore")
             except Exception:
                 return None
-        time.sleep(0.3)
+        time.sleep(0.2)
         return None
     else:
         try:
             return get_key_unix()
         except Exception:
-            time.sleep(0.3)
+            time.sleep(0.2)
             return None
 
 def launch_cli(app: GupaxApp = None):
@@ -232,24 +270,30 @@ def launch_cli(app: GupaxApp = None):
             if not ch:
                 continue
 
-            if ch in ("q", "Q"):
+            if ch in ("q", "Q", "QUIT", "ESC"):
                 app.running = False
                 break
             elif ch in ("1", "2", "3", "4", "5", "6"):
                 app.current_tab = int(ch)
-            elif ch in ("m", "M", " "):
+            elif ch in ("m", "M", " ", "\r", "\n"):
                 app.toggle_mining()
             elif ch in ("c", "C"):
                 app.toggle_chain()
-            elif ch in ("+", "="):
+            elif ch in ("+", "=", "UP"):
                 with app.lock:
                     app.active_threads = min(8, app.active_threads + 1)
-            elif ch in ("-", "_"):
+            elif ch in ("-", "_", "DOWN"):
                 with app.lock:
                     app.active_threads = max(1, app.active_threads - 1)
+            elif ch in ("RIGHT", "\t"):
+                with app.lock:
+                    app.current_tab = (app.current_tab % 6) + 1
+            elif ch == "LEFT":
+                with app.lock:
+                    app.current_tab = 6 if app.current_tab == 1 else app.current_tab - 1
             elif ch in ("e", "E"):
                 app.export_configs()
-            elif ch in ("p", "P"):
+            elif ch in ("p", "P", "r", "R"):
                 app.ping_all_nodes()
             elif ch in ("s", "S") and app.current_tab == 4:
                 with app.lock:

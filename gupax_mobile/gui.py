@@ -69,6 +69,14 @@ class GupaxGuiApp:
         # Connect log stream
         self.app.add_log_callback(self.on_new_log)
 
+        # Bind keyboard shortcuts
+        self.root.bind_all("<Key>", self.handle_keyboard_event)
+        self.root.bind_all("<Control-q>", lambda e: self.on_close())
+        self.root.bind_all("<Control-c>", lambda e: self.on_close())
+        self.root.bind_all("<Control-m>", lambda e: self.toggle_mining())
+        self.root.bind_all("<Control-r>", lambda e: self.app.ping_all_nodes(on_finish=self.schedule_refresh_node_list))
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
+
         # Trigger initial node ping
         self.app.ping_all_nodes(on_finish=self.schedule_refresh_node_list)
 
@@ -804,7 +812,7 @@ fi
             messagebox.showinfo("Export Successful", f"Saved config.json and start_xmrig.sh to:\n{target_dir}")
 
     # -------------------------------------------------------------
-    # Bottom Status Bar
+    # Bottom Status Bar & Keyboard Handling
     # -------------------------------------------------------------
     def create_status_bar(self):
         self.status_bar = tk.Frame(self.root, bg=THEME["header_bg"], height=28, padx=16, pady=4)
@@ -813,8 +821,78 @@ fi
         self.lbl_status_msg = tk.Label(self.status_bar, text="● System Ready", font=("Helvetica", 9), fg=THEME["green"], bg=THEME["header_bg"])
         self.lbl_status_msg.pack(side=tk.LEFT)
 
+        lbl_hints = tk.Label(self.status_bar, text="Shortcuts: [1-6] Tabs  [Space] Mine  [C] Chain  [↑/↓] Threads  [P] Ping  [Esc] Unfocus/Quit", font=("Helvetica", 8), fg="#64748b", bg=THEME["header_bg"])
+        lbl_hints.pack(side=tk.LEFT, padx=20)
+
         self.lbl_status_info = tk.Label(self.status_bar, text=f"Chain: {self.app.chain.upper()} | Target: {self.app.target_pool} | Threads: {self.app.active_threads}", font=("Helvetica", 9), fg=THEME["text_muted"], bg=THEME["header_bg"])
         self.lbl_status_info.pack(side=tk.RIGHT)
+
+    def on_close(self):
+        self.app.running = False
+        try:
+            self.root.destroy()
+        except Exception:
+            pass
+
+    def handle_keyboard_event(self, event):
+        # Allow typing in Entry, Text, or Combobox without intercepting shortcuts
+        widget = event.widget
+        if isinstance(widget, (tk.Entry, ttk.Entry, tk.Text, ttk.Combobox)):
+            if event.keysym == "Escape":
+                self.root.focus_set()
+            return
+
+        key = event.keysym
+        char = event.char or ""
+
+        num_map = {
+            "1": 0, "KP_1": 0,
+            "2": 1, "KP_2": 1,
+            "3": 2, "KP_3": 2,
+            "4": 3, "KP_4": 3,
+            "5": 4, "KP_5": 4,
+            "6": 5, "KP_6": 5,
+        }
+
+        # Tabs 1 - 6 (both main number row and numpad)
+        if char in ("1", "2", "3", "4", "5", "6") or key in num_map:
+            idx = int(char) - 1 if char in ("1", "2", "3", "4", "5", "6") else num_map[key]
+            if 0 <= idx < len(self.notebook.tabs()):
+                self.notebook.select(idx)
+        # Mining toggle: Space, M, Return, NumPad Enter
+        elif char in ("m", "M") or key in ("m", "M", "space", "Return", "KP_Enter"):
+            self.toggle_mining()
+        # Chain toggle: C
+        elif char in ("c", "C") or key in ("c", "C"):
+            self.toggle_chain()
+        # Thread count adjustment: Up / Down / + / - / NumPad +/-
+        elif char in ("+", "=") or key in ("plus", "equal", "Up", "KP_Add", "KP_Up"):
+            val = min(8, self.app.active_threads + 1)
+            self.thread_slider.set(val)
+            self.on_slider_change(val)
+        elif char in ("-", "_") or key in ("minus", "underscore", "Down", "KP_Subtract", "KP_Down"):
+            val = max(1, self.app.active_threads - 1)
+            self.thread_slider.set(val)
+            self.on_slider_change(val)
+        # Left / Right tab navigation
+        elif key in ("Left", "KP_Left"):
+            cur = self.notebook.index("current")
+            total = len(self.notebook.tabs())
+            self.notebook.select((cur - 1 + total) % total)
+        elif key in ("Right", "KP_Right", "Tab"):
+            cur = self.notebook.index("current")
+            total = len(self.notebook.tabs())
+            self.notebook.select((cur + 1) % total)
+        # Node latency ping: P or F5
+        elif char in ("p", "P") or key in ("p", "P", "F5"):
+            self.app.ping_all_nodes(on_finish=self.schedule_refresh_node_list)
+        # Export tab jump: E
+        elif char in ("e", "E") or key in ("e", "E"):
+            if len(self.notebook.tabs()) > 6:
+                self.notebook.select(6)
+        # Quit / Close: Q or Escape
+        elif char in ("q", "Q") or key in ("q", "Q", "Escape"):
+            self.on_close()
 
     # -------------------------------------------------------------
     # Core Actions & Update Loop

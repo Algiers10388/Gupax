@@ -1,5 +1,5 @@
 import React from 'react';
-import { Cpu, Zap, Battery, BatteryCharging, Sun, Moon, Download } from 'lucide-react';
+import { Cpu, Zap, Battery, BatteryCharging, Sun, Moon, Download, Keyboard } from 'lucide-react';
 import { P2PoolChain } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';
 import { useWakeLock } from '../hooks/useWakeLock';
@@ -11,6 +11,7 @@ interface HeaderProps {
   isMining: boolean;
   isP2PoolConnected: boolean;
   isNodeConnected: boolean;
+  onOpenShortcuts?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -19,6 +20,7 @@ export const Header: React.FC<HeaderProps> = ({
   isMining,
   isP2PoolConnected,
   isNodeConnected,
+  onOpenShortcuts,
 }) => {
   const { isLocked, toggleLock, isSupported: isWakeLockSupported } = useWakeLock();
   const battery = useBattery();
@@ -119,6 +121,19 @@ export const Header: React.FC<HeaderProps> = ({
             <Download className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">pip (.whl)</span>
           </a>
+
+          {/* Keyboard Shortcuts Button */}
+          {onOpenShortcuts && (
+            <button
+              id="header-shortcuts-button"
+              onClick={onOpenShortcuts}
+              className="flex items-center gap-1 px-2 py-1 text-xs font-mono rounded-lg bg-slate-900 border border-slate-700/80 hover:border-orange-500/50 text-slate-300 hover:text-orange-400 transition cursor-pointer"
+              title="Keyboard Shortcuts [?]"
+            >
+              <Keyboard className="w-3.5 h-3.5" />
+              <span className="hidden lg:inline text-[11px]">Keys [?]</span>
+            </button>
+          )}
 
           {/* PWA Install Button */}
           <PWAInstallButton />

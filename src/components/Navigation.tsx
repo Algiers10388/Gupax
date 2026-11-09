@@ -15,13 +15,13 @@ export const Navigation: React.FC<NavigationProps> = ({
   isMining,
   activeSharesCount,
 }) => {
-  const tabs: { id: GupaxTab; label: string; icon: React.ComponentType<{ className?: string }>; badge?: string | number }[] = [
-    { id: 'dashboard', label: 'Status', icon: Activity },
-    { id: 'miner', label: 'Miner', icon: Pickaxe, badge: isMining ? 'ON' : undefined },
-    { id: 'p2pool', label: 'P2Pool', icon: Network, badge: activeSharesCount > 0 ? `${activeSharesCount}★` : undefined },
-    { id: 'config', label: 'ARM Config', icon: Cpu },
-    { id: 'nodes', label: 'Nodes', icon: Server },
-    { id: 'console', label: 'Console', icon: Terminal },
+  const tabs: { id: GupaxTab; label: string; icon: React.ComponentType<{ className?: string }>; badge?: string | number; shortcut: string }[] = [
+    { id: 'dashboard', label: 'Status', icon: Activity, shortcut: '1' },
+    { id: 'miner', label: 'Miner', icon: Pickaxe, badge: isMining ? 'ON' : undefined, shortcut: '2' },
+    { id: 'p2pool', label: 'P2Pool', icon: Network, badge: activeSharesCount > 0 ? `${activeSharesCount}★` : undefined, shortcut: '3' },
+    { id: 'config', label: 'ARM Config', icon: Cpu, shortcut: '4' },
+    { id: 'nodes', label: 'Nodes', icon: Server, shortcut: '5' },
+    { id: 'console', label: 'Console', icon: Terminal, shortcut: '6' },
   ];
 
   return (
@@ -37,6 +37,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                 key={tab.id}
                 id={`tab-desktop-${tab.id}`}
                 onClick={() => onSelectTab(tab.id)}
+                title={`Press [${tab.shortcut}] to switch to ${tab.label}`}
                 className={`flex items-center gap-2 px-4 py-3 text-xs font-mono font-medium border-b-2 transition cursor-pointer relative ${
                   isActive
                     ? 'text-orange-400 border-orange-500 bg-orange-950/20'
@@ -45,6 +46,9 @@ export const Navigation: React.FC<NavigationProps> = ({
               >
                 <Icon className={`w-4 h-4 ${isActive ? 'text-orange-400' : 'text-slate-400'}`} />
                 <span>{tab.label}</span>
+                <kbd className="hidden lg:inline-block px-1 py-0.2 text-[9px] font-mono text-slate-500 bg-slate-900 border border-slate-800 rounded">
+                  {tab.shortcut}
+                </kbd>
                 {tab.badge && (
                   <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-orange-500/20 text-orange-400 border border-orange-500/30">
                     {tab.badge}

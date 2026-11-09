@@ -118,7 +118,7 @@ fi
         "algo": "rx/0",
         "coin": "monero",
         "url": targetPool || "p2pmd.xmrvsbeast.com:3333",
-        "user": walletAddress || "888tNkZrPN6JsEgekjMnABU4TBzc2Dt29EPAvkFxbANsAnJYPbb3iQ1YBRk1UXcdRsiKc9dhwMVgN5S9cQUiyoogDavup3H",
+        "user": walletAddress || "42MjdgtAAHAKKk6yu8iMYjWqf6zFuUbWEiwQCsEkg63LZTfxuWWWYG6HHaLnnLpcV9UkaNAJKTLoxRWHKH5TrMN5NY7x3gL",
         "pass": "gupax-android",
         "rig-id": null,
         "nicehash": false,

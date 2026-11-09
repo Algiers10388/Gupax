@@ -17,6 +17,10 @@ VERSION = "1.1.0"
 
 DEMO_WALLETS = [
     {
+        "name": "Primary Wallet (Default)",
+        "address": "42MjdgtAAHAKKk6yu8iMYjWqf6zFuUbWEiwQCsEkg63LZTfxuWWWYG6HHaLnnLpcV9UkaNAJKTLoxRWHKH5TrMN5NY7x3gL",
+    },
+    {
         "name": "Monero General Dev Fund",
         "address": "888tNkZrPN6JsEgekjMnABU4TBzc2Dt29EPAvkFxbANsAnJYPbb3iQ1YBRk1UXcdRsiKc9dhwMVgN5S9cQUiyoogDavup3H",
     },
