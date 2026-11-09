@@ -15,9 +15,11 @@ import {
   Coins, 
   ExternalLink 
 } from 'lucide-react';
-import { MiningStatus, P2PoolLiveStats, MinerShareInfo, GupaxTab } from '../types';
+import { MiningStatus, P2PoolLiveStats, MinerShareInfo, GupaxTab, HashratePoint, RandomXAuditResult } from '../types';
 import { useBattery } from '../hooks/useBattery';
 import { useWakeLock } from '../hooks/useWakeLock';
+import { HashrateVisualizer } from './HashrateVisualizer';
+import { RandomXDatasetCard } from './RandomXDatasetCard';
 
 interface DashboardTabProps {
   status: MiningStatus;
@@ -25,6 +27,8 @@ interface DashboardTabProps {
   minerInfo: MinerShareInfo;
   onToggleMining: () => void;
   onNavigate: (tab: GupaxTab) => void;
+  hashrateHistory?: HashratePoint[];
+  onAuditComplete?: (result: RandomXAuditResult) => void;
 }
 
 export const DashboardTab: React.FC<DashboardTabProps> = ({
@@ -33,6 +37,8 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   minerInfo,
   onToggleMining,
   onNavigate,
+  hashrateHistory,
+  onAuditComplete,
 }) => {
   const battery = useBattery();
   const { isLocked, toggleLock } = useWakeLock();
@@ -139,6 +145,17 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         </div>
       </div>
 
+      {/* Real-time Hashrate Visual Representation */}
+      <HashrateVisualizer
+        history={hashrateHistory || status.hashrateHistory || []}
+        isMining={status.isMining}
+        currentHashrate={status.hashrate10s}
+        averageHashrate={status.hashrate60s}
+        peakHashrate={status.peakHashrate}
+        activeThreads={status.activeThreads}
+        onToggleMining={onToggleMining}
+      />
+
       {/* Grid of Key Gupax Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* P2Pool Sidechain Card */}
@@ -238,6 +255,15 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           </div>
         </div>
       </div>
+
+      {/* RandomX Protocol & Dataset Audit Agent */}
+      <RandomXDatasetCard
+        chain={status.chain}
+        mainchainHeight={p2poolStats.mainchainHeight}
+        activeThreads={status.activeThreads}
+        walletAddress={status.walletAddress}
+        onAuditComplete={onAuditComplete}
+      />
 
       {/* Quick P2Pool Reward Summary */}
       <div className="rounded-xl bg-gradient-to-br from-slate-900 via-slate-900 to-orange-950/30 border border-slate-800/90 p-4 font-mono">

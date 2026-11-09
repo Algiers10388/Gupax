@@ -2,6 +2,21 @@
 <html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Ignore HMR WebSocket connection errors as specified by environment constraints
+      window.addEventListener('error', function(e) {
+        if (e && (e.message?.includes('WebSocket') || e.message?.includes('[vite]'))) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+        }
+      }, true);
+      window.addEventListener('unhandledrejection', function(e) {
+        if (e && (e.reason?.message?.includes('WebSocket') || e.reason?.message?.includes('[vite]'))) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+        }
+      }, true);
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Gupax for Android</title>
     <meta name="description" content="Mobile P2Pool and XMRig mining manager, remote monitor, and ARM configuration suite for Android devices." />

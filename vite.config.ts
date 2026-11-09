@@ -48,6 +48,33 @@ export default defineConfig(() => {
           type: 'module',
         },
       }),
+      {
+        name: 'download-attachment-headers',
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            if (req.url) {
+              const urlPath = req.url.split('?')[0];
+              const match = urlPath.match(/\/([^\/]+\.(whl|tar\.gz|zip|py|sh|json))$/i);
+              if (match) {
+                const filename = match[1];
+                res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+                if (filename.endsWith('.whl')) {
+                  res.setHeader('Content-Type', 'application/x-wheel+zip');
+                } else if (filename.endsWith('.tar.gz')) {
+                  res.setHeader('Content-Type', 'application/gzip');
+                } else if (filename.endsWith('.zip')) {
+                  res.setHeader('Content-Type', 'application/zip');
+                } else if (filename.endsWith('.json')) {
+                  res.setHeader('Content-Type', 'application/json');
+                } else if (filename.endsWith('.py') || filename.endsWith('.sh')) {
+                  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+                }
+              }
+            }
+            next();
+          });
+        },
+      },
     ],
     resolve: {
       alias: {
@@ -57,9 +84,8 @@ export default defineConfig(() => {
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
-      hmr: process.env.DISABLE_HMR !== 'true',
-      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
-      watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      hmr: false,
+      watch: null,
     },
   };
 });

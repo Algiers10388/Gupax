@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { ANDROID_SOC_PROFILES } from '../data/socProfiles';
 import { AndroidSoCProfile, P2PoolChain } from '../types';
+import { downloadAsset, downloadTextFile } from '../utils/download';
 
 interface AndroidConfigTabProps {
   walletAddress: string;
@@ -136,8 +137,30 @@ fi
     }
   };
 
-  const copyToClipboard = (text: string, isConfig: boolean) => {
-    navigator.clipboard.writeText(text);
+  const copyToClipboard = async (text: string, isConfig: boolean) => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        throw new Error('Clipboard API unavailable');
+      }
+    } catch {
+      // Robust fallback for iframe environments where clipboard permission may be restricted
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      } catch {
+        // Fallback suppressed safely
+      }
+    }
+
     if (isConfig) {
       setCopiedConfig(true);
       setTimeout(() => setCopiedConfig(false), 2000);
@@ -148,13 +171,11 @@ fi
   };
 
   const downloadConfigFile = () => {
-    const blob = new Blob([JSON.stringify(generatedConfig, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'config.json';
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadTextFile(JSON.stringify(generatedConfig, null, 2), 'config.json', 'application/json');
+  };
+
+  const downloadTermuxScript = () => {
+    downloadTextFile(termuxScript, 'start_xmrig.sh', 'text/x-sh;charset=utf-8');
   };
 
   return (
@@ -263,13 +284,23 @@ fi
             <Terminal className="w-4 h-4 text-emerald-400" />
             <span className="font-bold text-white uppercase">Termux 1-Click Mining Script</span>
           </div>
-          <button
-            onClick={() => copyToClipboard(termuxScript, false)}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition cursor-pointer"
-          >
-            {copiedScript ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{copiedScript ? 'Copied!' : 'Copy Script'}</span>
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => copyToClipboard(termuxScript, false)}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition cursor-pointer"
+            >
+              {copiedScript ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copiedScript ? 'Copied!' : 'Copy Script'}</span>
+            </button>
+            <button
+              onClick={downloadTermuxScript}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition cursor-pointer"
+              title="Download executable bash startup script"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Download (.sh)</span>
+            </button>
+          </div>
         </div>
 
         <p className="text-[11px] text-slate-400 font-sans">
@@ -329,33 +360,38 @@ fi
             </div>
           </div>
           <div className="flex flex-wrap gap-2 shrink-0">
-            <a
-              href="/gupax_mobile-1.1.0-py3-none-any.whl"
-              download="gupax_mobile-1.1.0-py3-none-any.whl"
+            <button
+              onClick={() => downloadAsset('/gupax_mobile-1.1.0-py3-none-any.whl', 'gupax_mobile-1.1.0-py3-none-any.whl')}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition cursor-pointer shadow-sm"
               title="Download standard Python Wheel for pip install"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Download Wheel (.whl)</span>
-            </a>
-            <a
-              href="/gupax_mobile-1.1.0.tar.gz"
-              download="gupax_mobile-1.1.0.tar.gz"
+            </button>
+            <button
+              onClick={() => downloadAsset('/gupax_mobile-1.1.0.tar.gz', 'gupax_mobile-1.1.0.tar.gz')}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition cursor-pointer"
               title="Download source tarball for pip install"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Source (.tar.gz)</span>
-            </a>
-            <a
-              href="/gupax_mobile.py"
-              download="gupax_mobile.py"
+            </button>
+            <button
+              onClick={() => downloadAsset('/gupax_mobile.py', 'gupax_mobile.py')}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition cursor-pointer"
               title="Download standalone single-file python script"
             >
               <FileCode2 className="w-3.5 h-3.5" />
               <span>Script (.py)</span>
-            </a>
+            </button>
+            <button
+              onClick={() => downloadAsset('/gupax_mobile.zip', 'gupax_mobile.zip')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition cursor-pointer"
+              title="Download clean ZIP source archive"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Archive (.zip)</span>
+            </button>
           </div>
         </div>
 
@@ -367,11 +403,14 @@ fi
             </span>
             <button
               onClick={() => {
-                navigator.clipboard.writeText('pip install gupax_mobile-1.1.0-py3-none-any.whl\n# Launch desktop GUI window (or TUI if headless):\ngupax\n# Force TUI mode:\ngupax --cli');
+                copyToClipboard(
+                  'pip install gupax_mobile-1.1.0-py3-none-any.whl\n# Launch desktop GUI window (or TUI if headless):\ngupax\n# Force TUI mode:\ngupax --cli',
+                  false
+                );
                 setCopiedPip(true);
                 setTimeout(() => setCopiedPip(false), 2000);
               }}
-              className="flex items-center gap-1 text-slate-400 hover:text-amber-400 transition"
+              className="flex items-center gap-1 text-slate-400 hover:text-amber-400 transition cursor-pointer"
             >
               {copiedPip ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
               <span>{copiedPip ? 'Copied' : 'Copy Commands'}</span>

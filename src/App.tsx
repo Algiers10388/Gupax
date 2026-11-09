@@ -5,7 +5,8 @@ import {
   MiningStatus, 
   P2PoolLiveStats, 
   MinerShareInfo, 
-  LogEntry 
+  LogEntry,
+  HashratePoint
 } from './types';
 import { Header } from './components/Header';
 import { Navigation } from './components/Navigation';
@@ -21,6 +22,21 @@ import { useHaptics } from './hooks/useHaptics';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { WifiOff } from 'lucide-react';
 
+const generateInitialHashrateHistory = (): HashratePoint[] => {
+  const points: HashratePoint[] = [];
+  const now = Date.now();
+  for (let i = 35; i >= 0; i--) {
+    const t = new Date(now - i * 1000);
+    points.push({
+      timestamp: t.getTime(),
+      timeLabel: t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      hashrate: 0,
+      hasShare: false,
+    });
+  }
+  return points;
+};
+
 export default function App() {
   const isOnline = useOnlineStatus();
   const { shareSuccessHaptic, blockFoundHaptic } = useHaptics();
@@ -29,6 +45,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<GupaxTab>('dashboard');
   const [chain, setChain] = useState<P2PoolChain>('mini');
   const [walletAddress, setWalletAddress] = useState<string>(DEMO_WALLETS[0].address);
+  const [hashrateHistory, setHashrateHistory] = useState<HashratePoint[]>(generateInitialHashrateHistory);
 
   // Mining Engine State
   const [status, setStatus] = useState<MiningStatus>({
@@ -163,11 +180,13 @@ export default function App() {
         // Occasional simulated share submit to P2Pool stratum
         let newAccepted = prev.acceptedShares;
         let newRejected = prev.rejectedShares;
+        let isShareFound = false;
 
         if (Math.random() < 0.04) { // ~Every 25 seconds
           const isAccepted = Math.random() > 0.03;
           if (isAccepted) {
             newAccepted += 1;
+            isShareFound = true;
             shareSuccessHaptic();
             addLog(
               'P2POOL',
@@ -179,6 +198,20 @@ export default function App() {
             addLog('P2POOL', 'warn', `share rejected by stratum (stale diff check)`);
           }
         }
+
+        // Stream real-time telemetry into hashrateHistory
+        const now = new Date();
+        const timeLabel = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        setHashrateHistory(prevHistory => {
+          const nextPt: HashratePoint = {
+            timestamp: now.getTime(),
+            timeLabel,
+            hashrate: Math.round(currentHs * 10) / 10,
+            hasShare: isShareFound,
+          };
+          const updated = [...prevHistory, nextPt];
+          return updated.length > 120 ? updated.slice(updated.length - 120) : updated;
+        });
 
         return {
           ...prev,
@@ -230,6 +263,18 @@ export default function App() {
     setStatus(prev => {
       const nextMining = !prev.isMining;
       if (!nextMining) {
+        setHashrateHistory(hist => {
+          const now = new Date();
+          return [
+            ...hist.slice(-119),
+            {
+              timestamp: now.getTime(),
+              timeLabel: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+              hashrate: 0,
+              hasShare: false,
+            }
+          ];
+        });
         return {
           ...prev,
           isMining: false,
@@ -418,6 +463,14 @@ export default function App() {
             minerInfo={minerInfo}
             onToggleMining={handleToggleMining}
             onNavigate={setActiveTab}
+            hashrateHistory={hashrateHistory}
+            onAuditComplete={result => {
+              addLog(
+                'AGENT',
+                'success',
+                `RandomX audit complete: Epoch #${result.epoch} seed #${result.seedHeight.toLocaleString()} verified 100% accurate.`
+              );
+            }}
           />
         )}
 

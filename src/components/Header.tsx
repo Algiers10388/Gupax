@@ -4,6 +4,7 @@ import { P2PoolChain } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';
 import { useWakeLock } from '../hooks/useWakeLock';
 import { useBattery } from '../hooks/useBattery';
+import { downloadAsset } from '../utils/download';
 
 interface HeaderProps {
   chain: P2PoolChain;
@@ -112,15 +113,14 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Standalone Native Python Program / PIP Download */}
-          <a
-            href="/gupax_mobile-1.1.0-py3-none-any.whl"
-            download="gupax_mobile-1.1.0-py3-none-any.whl"
+          <button
+            onClick={() => downloadAsset('/gupax_mobile-1.1.0-py3-none-any.whl', 'gupax_mobile-1.1.0-py3-none-any.whl')}
             title="Download Standard Python Application (pip install gupax_mobile-1.1.0-py3-none-any.whl)"
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition shadow-sm"
+            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition shadow-sm cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">pip (.whl)</span>
-          </a>
+          </button>
 
           {/* Keyboard Shortcuts Button */}
           {onOpenShortcuts && (

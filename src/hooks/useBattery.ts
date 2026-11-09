@@ -22,12 +22,18 @@ export function useBattery(): BatteryStatus {
   });
 
   useEffect(() => {
-    // Check if navigator.getBattery exists
+    let isMounted = true;
+    let manager: BatteryManager | null = null;
+    let updateFn: (() => void) | null = null;
+
     if ('getBattery' in navigator) {
       (navigator as unknown as { getBattery: () => Promise<BatteryManager> })
         .getBattery()
         .then((batteryManager: BatteryManager) => {
-          const update = () => {
+          if (!isMounted) return;
+          manager = batteryManager;
+          updateFn = () => {
+            if (!isMounted) return;
             setBattery({
               level: batteryManager.level,
               charging: batteryManager.charging,
@@ -37,20 +43,24 @@ export function useBattery(): BatteryStatus {
             });
           };
 
-          update();
-          batteryManager.addEventListener('chargingchange', update);
-          batteryManager.addEventListener('levelchange', update);
-
-          return () => {
-            batteryManager.removeEventListener('chargingchange', update);
-            batteryManager.removeEventListener('levelchange', update);
-          };
+          updateFn();
+          batteryManager.addEventListener('chargingchange', updateFn);
+          batteryManager.addEventListener('levelchange', updateFn);
         })
         .catch(() => {
-          // Fallback
-          setBattery(b => ({ ...b, isSupported: false }));
+          if (isMounted) {
+            setBattery(b => ({ ...b, isSupported: false }));
+          }
         });
     }
+
+    return () => {
+      isMounted = false;
+      if (manager && updateFn) {
+        manager.removeEventListener('chargingchange', updateFn);
+        manager.removeEventListener('levelchange', updateFn);
+      }
+    };
   }, []);
 
   return battery;

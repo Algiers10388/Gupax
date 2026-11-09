@@ -103,6 +103,12 @@ export const P2PoolTab: React.FC<P2PoolTabProps> = ({
             type="text"
             value={inputAddress}
             onChange={e => setInputAddress(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSearch(inputAddress);
+              }
+            }}
             placeholder="Paste your 95-character Monero address here (4... or 8...)"
             className="flex-1 px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-orange-500"
           />

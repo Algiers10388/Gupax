@@ -34,11 +34,31 @@ export const ConsoleTab: React.FC<ConsoleTabProps> = ({ logs, onClearLogs }) => 
     return true;
   });
 
-  const copyLogs = () => {
+  const copyLogs = async () => {
     const text = logs
       .map(l => `[${l.timestamp}] [${l.source}] ${l.message}`)
       .join('\n');
-    navigator.clipboard.writeText(text);
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        throw new Error('Clipboard API unavailable');
+      }
+    } catch {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      } catch {
+        // Fallback suppressed safely
+      }
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

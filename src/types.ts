@@ -6,6 +6,13 @@ export type GupaxTab = 'dashboard' | 'miner' | 'p2pool' | 'config' | 'nodes' | '
 
 export type P2PoolChain = 'mini' | 'main';
 
+export interface HashratePoint {
+  timestamp: number;
+  timeLabel: string;
+  hashrate: number;
+  hasShare?: boolean;
+}
+
 export interface MiningStatus {
   isMining: boolean;
   isP2PoolConnected: boolean;
@@ -22,6 +29,7 @@ export interface MiningStatus {
   targetPool: string;
   chain: P2PoolChain;
   walletAddress: string;
+  hashrateHistory?: HashratePoint[];
 }
 
 export interface P2PoolLiveStats {
@@ -79,7 +87,7 @@ export interface NodeEndpoint {
 export interface LogEntry {
   id: string;
   timestamp: string;
-  source: 'GUPAX' | 'P2POOL' | 'XMRIG' | 'DAEMON' | 'ANDROID';
+  source: 'GUPAX' | 'P2POOL' | 'XMRIG' | 'DAEMON' | 'ANDROID' | 'AGENT';
   level: 'info' | 'warn' | 'error' | 'success';
   message: string;
 }
@@ -91,3 +99,28 @@ export interface BatteryStatus {
   dischargingTime: number;
   isSupported: boolean;
 }
+
+export interface RandomXAuditResult {
+  success: boolean;
+  status: 'VERIFIED_ACCURATE' | 'WARNING' | 'ERROR';
+  accuracyScore: number;
+  chain: P2PoolChain;
+  blockHeight: number;
+  epoch: number;
+  seedHeight: number;
+  seedHash: string;
+  blocksRemaining: number;
+  hoursRemaining: number;
+  datasetSizeMb: number;
+  cacheSizeMb: number;
+  scratchpadPerThreadMb: number;
+  totalScratchpadMb: number;
+  threads: number;
+  selectedCores: number[];
+  socName: string;
+  hugePages: boolean;
+  auditTimestamp: string;
+  agentVerdict: string;
+  agentReport: string;
+}
+
